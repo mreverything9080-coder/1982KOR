@@ -116,8 +116,13 @@ def send_telegram(text: str):
 
 def load_log():
     if os.path.exists(LOG_PATH):
-        with open(LOG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(LOG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            # 로그 파일이 손상되어도 전체 실행이 죽지 않도록 방어 — 새 로그로 이어서 시작
+            print(f"[경고] 기존 로그 파일 읽기 실패, 새로 시작합니다: {e}")
+            return []
     return []
 
 
@@ -170,19 +175,27 @@ def main():
         # 핵심 분기: 가격이 조용한데 OI만 급증 = 사전 신호 후보 / 가격도 이미 급변 = 진행(확인)형
         if price_chg_1h is None:
             tag = "⚪ 판정 보류 (가격 데이터 조회 실패)"
+            price_line = "가격 변화(1h): 조회 실패"
         elif abs(price_chg_1h) <= PRICE_FLAT_MAX_PCT:
             tag = "🟡 사전 신호 후보 — 가격 정체 + OI만 급증 (신규 포지션 선진입 추정)"
+            price_line = f"가격 변화(1h): {price_chg_1h:+.1f}%"
         else:
             tag = "🔴 진행형 신호 — 가격도 이미 움직이는 중 (사전 신호 아님, 추격 주의)"
+            price_line = f"가격 변화(1h): {price_chg_1h:+.1f}%"
 
         msg = (
             f"⚡ *OI 급증 감지* — `{symbol}`\n"
             f"{now_kst}\n"
             f"OI 변화율: 1h {chg_1h:+.1f}% · 4h {chg_4h:+.1f}% · 24h {chg_24h:+.1f}%\n"
-            f"가격 변화(1h): {price_chg_1h:+.1f}%\n" if price_chg_1h is not None else f"가격 변화(1h): 조회 실패\n"
-        ) + f"판정: {tag}"
+            f"{price_line}\n"
+            f"판정: {tag}"
+        )
 
-        send_telegram(msg)
+        try:
+            send_telegram(msg)
+        except Exception as e:
+            # 텔레그램 발송이 실패해도 나머지 종목 처리·로그 저장은 계속 진행
+            print(f"[에러] {symbol} 텔레그램 발송 중 예외 발생(무시하고 계속): {e}")
         print(msg)
 
     save_log(log)
