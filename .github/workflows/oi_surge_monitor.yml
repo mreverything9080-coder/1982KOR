@@ -1,0 +1,43 @@
+# 저장 위치: <레포>/.github/workflows/oi_surge_monitor.yml
+# 기존 GitHub Actions 릴레이 인프라에 추가하는 신규 워크플로 (Tier 2: Bybit API 트랙)
+
+name: OI Surge Monitor (Bybit)
+
+on:
+  schedule:
+    # 30분마다 실행 (기본값). private 저장소 무료 한도(월 2,000분) 안전권 — 근거는 답변의 Step 3 표 참고
+    # 저장소가 public이거나 유료 플랜이라 한도 여유가 있으면 '*/15 * * * *'로 바꿔도 됨
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}   # 수동 실행 버튼 (Actions 탭에서 즉시 테스트 가능)
+
+permissions:
+  contents: write         # data/oi_surge_log.json 커밋을 위해 필요
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치
+        run: pip install requests
+
+      - name: OI 급증 감지 실행
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python oi_surge_monitor.py
+
+      - name: 스냅샷 로그 커밋 (Tier 3 검증용 원본 데이터 누적)
+        run: |
+          git config user.name "oi-surge-bot"
+          git config user.email "actions@github.com"
+          git add data/oi_surge_log.json
+          git diff --cached --quiet || git commit -m "OI 스냅샷 업데이트 $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
