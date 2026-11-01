@@ -118,5 +118,29 @@
     "oi_4h_pct": 0.39,
     "oi_24h_pct": -0.36,
     "price_1h_pct": -0.33
+  },
+  {
+    "time": "2026-11-01 16:38 KST",
+    "symbol": "BTCUSDT",
+    "oi_1h_pct": 0.02,
+    "oi_4h_pct": 0.58,
+    "oi_24h_pct": -0.17,
+    "price_1h_pct": 0.1
+  },
+  {
+    "time": "2026-11-01 16:38 KST",
+    "symbol": "ETHUSDT",
+    "oi_1h_pct": 0.1,
+    "oi_4h_pct": 0.43,
+    "oi_24h_pct": 3.68,
+    "price_1h_pct": 0.06
+  },
+  {
+    "time": "2026-11-01 16:38 KST",
+    "symbol": "SOLUSDT",
+    "oi_1h_pct": 0.13,
+    "oi_4h_pct": 1.2,
+    "oi_24h_pct": 2.35,
+    "price_1h_pct": -0.11
   }
 ]
